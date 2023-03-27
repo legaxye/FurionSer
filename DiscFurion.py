@@ -606,5 +606,6 @@ def CrearImagen(Id_partida):
 bot.add_cog(Principal(bot))
 
 if __name__ == '__main__':
-    bot.run(os.environ("DISCO_MARINELA"))
+    #bot.run(os.environ("DISCO_MARINELA"))
+    bot.run(os.environ.get('DISCO_MARINELA'))
 
