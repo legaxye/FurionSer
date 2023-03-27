@@ -287,7 +287,7 @@ class Principal(commands.Cog):
         # Enviar el resultado
         await ctx.send(f"La moneda ha salido {resultado}. {ganador.mention} ha ganado {monedas} monedas y ahora tiene un balance de {user_balances[str(ganador.id)]}. {perdedor.mention} ha perdido {monedas} monedas y ahora tiene un balance de {user_balances[str(perdedor.id)]}.")
 
-    @commands.command(name="Sumar")
+    @commands.command(name="Partidas")
     @commands.has_any_role('[Mito]', 'Ver')
     async def sumita(self, ctx, IDPartida: int):
         CrearImagen(IDPartida)
