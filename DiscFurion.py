@@ -7,8 +7,32 @@ import os
 import nextcord
 import requests
 import asyncio
-
+import mysql.connector
+#Datos
+Dato_Host = os.environ.get('HOS_DATA')
+Dato_User = os.environ.get('USE_DATA')
+Dato_Pas = os.environ.get('USE_PAS')
+Dato_Name = os.environ.get('USE_NAME')
 user_balances = {}
+
+mydb = mysql.connector.connect(
+host=Dato_Host,
+user=Dato_User,
+password=Dato_Pas,
+database=Dato_Name
+)
+
+cursor = mydb.cursor()
+
+cursor.execute("SELECT User, Coins FROM Economia")
+
+rows = cursor.fetchall()
+print(rows)
+user_balances = {str(row[0]): row[1] for row in rows}
+#user_balances = rows
+print(user_balances)
+cursor.close()
+mydb.close()
 
 
 CanalComandos = 1089045232315809902
@@ -28,9 +52,12 @@ class Principal(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.hourly_income.start()
+        
 
     def cog_unload(self):
         self.hourly_income.cancel()
+
+    
 
     @tasks.loop(hours=1)
     async def hourly_income(self):
@@ -39,6 +66,7 @@ class Principal(commands.Cog):
                 if str(member.id) not in user_balances:
                     user_balances[str(member.id)] = 0
                 user_balances[str(member.id)] += 100
+        ActualizarDatos()
 
     @hourly_income.before_loop
     async def before_hourly_income(self):
@@ -75,7 +103,8 @@ class Principal(commands.Cog):
         if ctx.channel.id  != CanalComandos:  
             return
         if str(ctx.author.id) not in user_balances:
-            user_balances[str(ctx.author.id)] = 0
+            #user_balances[str(ctx.author.id)] = 0
+            user_balances[ctx.author.id] = 0
         await ctx.send(f"{ctx.author.mention}, tu balance actual es de {user_balances[str(ctx.author.id)]} monedas.")
 
     @commands.command(name="AddMonedas")
@@ -287,7 +316,7 @@ class Principal(commands.Cog):
         # Enviar el resultado
         await ctx.send(f"La moneda ha salido {resultado}. {ganador.mention} ha ganado {monedas} monedas y ahora tiene un balance de {user_balances[str(ganador.id)]}. {perdedor.mention} ha perdido {monedas} monedas y ahora tiene un balance de {user_balances[str(perdedor.id)]}.")
 
-    @commands.command(name="Partidas")
+    @commands.command(name="Partida")
     @commands.has_any_role('[Mito]', 'Ver')
     async def sumita(self, ctx, IDPartida: int):
         CrearImagen(IDPartida)
@@ -455,7 +484,7 @@ async def game_results(ctx):
 
 
 @bot.command(name="Borrar")
-@commands.has_any_role('[OWNER]', 'Ver')
+@commands.has_any_role('[Mito]', '[Semidiós],[Héroe]')
 async def reborar(ctx):
     if ctx.channel.id  != CanalDotaUpdates :  
         return
@@ -477,6 +506,34 @@ def convertir_segundos(segundos):
     segundos = segundos % 60
     return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
+
+
+@bot.command(name="Update")
+@commands.has_any_role('[Mito]', '[Semidiós],[Héroe]')
+async def save_user_balances(ctx):
+    mydb = mysql.connector.connect(
+        host=Dato_Host,
+        user=Dato_User,
+        password=Dato_Pas,
+        database=Dato_Name
+    )
+    cursor = mydb.cursor(prepared=True)
+    select_query = "SELECT * FROM Economia WHERE User = %s"
+    insert_query = "INSERT INTO Economia (User, Coins) VALUES (%s, %s)"
+    update_query = "UPDATE Economia SET Coins = %s WHERE User = %s"
+    for user_id, balance in user_balances.items():
+        values = (user_id,)
+        cursor.execute(select_query, values)
+        row = cursor.fetchone()
+        if row is None:
+            values = (user_id, balance)
+            cursor.execute(insert_query, values)
+        else:
+            values = (balance, user_id)
+            cursor.execute(update_query, values)
+    mydb.commit()
+    cursor.close()
+    mydb.close()
 
 def CrearImagen(Id_partida):
     #Obtener Info
@@ -602,6 +659,30 @@ def CrearImagen(Id_partida):
     imagen_principal.save("ImagenTotal.png")
 
 
+def ActualizarDatos():
+        mydb = mysql.connector.connect(
+        host=Dato_Host,
+        user=Dato_User,
+        password=Dato_Pas,
+        database=Dato_Name
+        )
+        cursor = mydb.cursor(prepared=True)
+        select_query = "SELECT * FROM Economia WHERE User = %s"
+        insert_query = "INSERT INTO Economia (User, Coins) VALUES (%s, %s)"
+        update_query = "UPDATE Economia SET Coins = %s WHERE User = %s"
+        for user_id, balance in user_balances.items():
+            values = (user_id,)
+            cursor.execute(select_query, values)
+            row = cursor.fetchone()
+            if row is None:
+                values = (user_id, balance)
+                cursor.execute(insert_query, values)
+            else:
+                values = (balance, user_id)
+                cursor.execute(update_query, values)
+        mydb.commit()
+        cursor.close()
+        mydb.close()
 # Cargamos la extensión
 bot.add_cog(Principal(bot))
 
