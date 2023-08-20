@@ -687,6 +687,11 @@ def ActualizarDatos():
 bot.add_cog(Principal(bot))
 
 if __name__ == '__main__':
-    #bot.run(os.environ("DISCO_MARINELA"))
-    bot.run(os.environ.get('DISCO_MARINELA'))
+    # Obtén el valor de la variable de entorno DISCO_MARINELA
+    token = os.environ.get('DISCO_MARINELA')
+    
+    # Obtén el valor de la variable de entorno PORT o usa el puerto 8080 de forma predeterminada
+    port = int(os.environ.get("PORT", 8080))
+    
+    bot.run(token)
 
